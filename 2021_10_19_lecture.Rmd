@@ -125,3 +125,45 @@ dynamite_df =
   )
 ```
 
+## API
+Instead of working with something that already exist, we send a request to a server
+
+There's an API tab on the website, copy that link 
+
+```{r}
+# content() will do its best to guess it's data structure 
+nyc_water = 
+  GET("https://data.cityofnewyork.us/resource/ia2d-e54m.csv") %>% 
+  content("parsed")
+```
+
+Let's see what JSON looks like ...
+```{r}
+nyc_water = 
+  GET("https://data.cityofnewyork.us/resource/ia2d-e54m.json") %>% 
+  content("text") %>%
+  jsonlite::fromJSON() %>%
+  as_tibble()
+```
+
+```{r}
+# returns 1000 rows at a time, so we need to specify how many rows we want, might vary with each API 
+brfss_smart2010 = 
+  GET("https://chronicdata.cdc.gov/resource/acme-vg9e.csv",
+      query = list("$limit" = 5000)) %>% 
+  content("parsed")
+```
+
+Pokemon!
+
+```{r}
+poke = 
+  GET("http://pokeapi.co/api/v2/pokemon/1") %>%
+  content()
+
+poke$name
+
+poke[["name"]]
+poke[["abilities"]]
+```
+
