@@ -1,0 +1,127 @@
+---
+title: "Data Wrangling II"
+subtitle: "Reading data from the web"
+author: "Anna Ma"
+date: "10/22/2021"
+output: github_document
+---
+```{r}
+library(tidyverse)
+library(rvest)
+library(httr)
+
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%"
+)
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_color_discrete = scale_color_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+```
+
+## NSDUH data
+
+R will go to the internet and import the entire html file that comes out of the url
+
+```{r}
+url = "http://samhda.s3-us-gov-west-1.amazonaws.com/s3fs-public/field-uploads/2k15StateFiles/NSDUHsaeShortTermCHG2015.htm"
+drug_use_html = read_html(url)
+
+drug_use_html
+```
+
+**Note**
+Every time we run the following code, r will call the internet and try to download things, some time we need this, but other times we don't. So if we separate this step with the rest (separate drug_use_html with drug_use_df, instead of piping them together), we can read in the html file first, and as we refine the code for the df in the separate code, we are manipulating it with a local version of the html file instead of downloading it every time.
+
+```{r, eval = FALSE}
+drug_use_html = read_html(url)
+```
+
+**table**
+Now R will take the html and try to extract all the tables in it has and format it as a data frame.
+
+```{r}
+drug_use_html %>%
+  html_table()
+```
+
+So now we have the 15 tables that are in the html file 
+
+```{r}
+drug_use_df = 
+  drug_use_html %>%
+  html_table() %>% 
+  first() %>%  # this shows the footnote in the first table, we need to remove this
+  slice(-1) %>% view()
+```
+ 
+## Star wars
+
+Get some star wars data 
+
+```{r}
+sw_url = "https://www.imdb.com/list/ls070150896/"
+
+sw_html = 
+  read_html(sw_url)
+
+sw_html
+```
+
+We don't have any tables in the web. Suppose we want the title, rating, and how much money they made, etc. All those things we want is sorted in the same place, for each movie, therefore, we can use the CSS selector. Use selector gadget 
+
+Use the selector gadget to select one thing u want highlight in green, and it will get all the other things that are using the same CSS tag. It will return a lot of things highlighted in yellow, all of which are using the same tag. Click on the highlighted parts that u don't want, make them red. Check and see if only the things u want are highlighted in yellow. Then copy the title that selectorgadget  identified, for example, ".lister-item-header a"
+
+```{r}
+sw_titles = 
+  sw_html %>% 
+  html_elements(".lister-item-header a") %>% #Getting all the elements that go along with this tag.
+  html_text()# converting them to text 
+
+sw_revenue = 
+  sw_html %>% 
+  html_elements(".text-muted .ghost~ .text-muted+ span") %>% 
+  html_text()
+
+sw_df = 
+  tibble(
+    title = sw_titles,
+    revenue = sw_revenue
+  )
+```
+
+## Napolean dynamite
+
+Dynamite reviews
+
+```{r}
+dynamite_url = "https://www.amazon.com/product-reviews/B00005JNBQ/ref=cm_cr_arp_d_viewopt_rvwer?ie=UTF8&reviewerType=avp_only_reviews&sortBy=recent&pageNumber=1"
+
+dynamite_html = 
+  read_html(dynamite_url)
+
+dynamite_titles = 
+  dynamite_html %>% 
+  html_elements(".a-text-bold span") %>% 
+  html_text()
+
+dynamite_stars = 
+  dynamite_html %>% 
+  html_elements("#cm_cr-review_list .review-rating") %>% 
+  html_text()
+
+dynamite_df = 
+  tibble(
+    titles = dynamite_titles,
+    stars = dynamite_stars
+  )
+```
+
